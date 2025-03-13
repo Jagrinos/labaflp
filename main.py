@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+
+from Demos.mmapfile_demo import fsize
 from docx import Document
 from docx2pdf import convert
 import fitz
@@ -7,13 +9,19 @@ import os
 from PIL import Image, ImageTk
 import io
 
+from markup import markupdocx
+
+
 # Функция для сохранения данных в документ
 def save_to_docx():
-    name = entry_name.get()
-    surname = entry_surname.get()
+    rec = recipient.get("1.0", tk.END).strip()
+    tit = title.get()
+    txt = text.get("1.0", tk.END).strip()
+    sp = sender_profession.get()
+    s = sender.get()
 
-    if not name or not surname:
-        messagebox.showwarning("Ошибка", "Пожалуйста, введите имя и фамилию")
+    if not rec or not tit or not txt or not sp or not s:
+        messagebox.showwarning("Ошибка", "Пожалуйста, введите все поля")
         return
 
     # Показываем сообщение о загрузке
@@ -21,22 +29,12 @@ def save_to_docx():
     root.update()  # Обновляем интерфейс, чтобы сообщение отобразилось
 
     # Запускаем сохранение и обновление предпросмотра в отдельном поток
-    save_and_update_preview(name, surname)
+    save_and_update_preview(rec, tit, txt, sp, s)
 
 # Функция для сохранения данных и обновления предпросмотра
-def save_and_update_preview(name, surname):
+def save_and_update_preview(rec, tit, txt, sp, s):
     try:
-        # Создание нового документа или открытие существующего
-
-        doc = Document()
-
-        # Добавление данных в документ
-        doc.add_paragraph(f"Имя: {name}")
-        doc.add_paragraph(f"Фамилия: {surname}")
-        doc.add_paragraph("")  # Пустая строка для разделения записей
-
-        # Сохранение документа
-        doc.save('output.docx')
+        markupdocx(rec, tit, txt, sp, s)
 
         # Конвертация DOCX в PDF
         convert('output.docx', 'output.pdf')
@@ -70,22 +68,33 @@ root.title("Ввод данных в DOCX с предпросмотром PDF")
 left_frame = tk.Frame(root)
 left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="n")
 
-# Поля для ввода имени и фамилии
-tk.Label(left_frame, text="Имя:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
-entry_name = tk.Entry(left_frame)
-entry_name.grid(row=0, column=1, padx=10, pady=10)
+# Поля для ввода
+tk.Label(left_frame, text="Получатель:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+recipient = tk.Text(left_frame)
+recipient.grid(row=0, column=1, padx=10, pady=10)
 
-tk.Label(left_frame, text="Фамилия:").grid(row=1, column=0, padx=10, pady=10, sticky="w")
-entry_surname = tk.Entry(left_frame)
-entry_surname.grid(row=1, column=1, padx=10, pady=10)
+tk.Label(left_frame, text="Заголовок:").grid(row=1, column=0, padx=10, pady=10, sticky="w")
+title = tk.Entry(left_frame)
+title.grid(row=1, column=1, padx=10, pady=10)
+
+tk.Label(left_frame, text="Текст:").grid(row=2, column=0, padx=10, pady=10, sticky="w")
+text = tk.Text(left_frame)
+text.grid(row=2, column=1, padx=10, pady=10)
+
+tk.Label(left_frame, text="Ваша должность:").grid(row=3, column=0, padx=10, pady=10, sticky="w")
+sender_profession = tk.Entry(left_frame)
+sender_profession.grid(row=3, column=1, padx=10, pady=10)
+
+tk.Label(left_frame, text="Ваше ФИО:").grid(row=4, column=0, padx=10, pady=10, sticky="w")
+sender = tk.Entry(left_frame)
+sender.grid(row=4, column=1, padx=10, pady=10)
+
 
 # Кнопка для сохранения данных
 save_button = tk.Button(left_frame, text="Сохранить", command=save_to_docx)
-save_button.grid(row=2, column=0, columnspan=2, pady=10)
+save_button.grid(row=5, column=0, columnspan=2, pady=10)
 
-# Метка для отображения сообщения о загрузке
-loading_label = tk.Label(left_frame, text="", fg="blue")
-loading_label.grid(row=3, column=0, columnspan=2, pady=10)
+
 
 # Правая часть окна: предпросмотр PDF
 right_frame = tk.Frame(root)
@@ -94,10 +103,22 @@ right_frame.grid(row=0, column=1, padx=10, pady=10, sticky="n")
 # Метка для отображения предпросмотра PDF
 pdf_preview_label = tk.Label(right_frame)
 pdf_preview_label.grid(row=0, column=0, padx=10, pady=10)
+# Метка для отображения сообщения о загрузке
+loading_label = tk.Label(right_frame, text="", fg="blue",font=("Arial", 36))
+loading_label.grid(row=1, column=0, columnspan=2, pady=10)
 
 # Первоначальное обновление предпросмотра (если файл уже существует)
 if os.path.exists('output.docx'):
-    save_and_update_preview("name", "surname")
+    save_and_update_preview(
+        "Генеральному директору\nООО \"Умный склад\"\nПодгорному М.Ю",
+        "Благодарственное письмо",
+        "ТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекст"
+        "ТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекс\n"
+        "ТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекст\n"
+        "ТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекстТекст",
+        "Генеральный директор",
+        "Д.С. Шербаков"
+    )
 
 # Запуск основного цикла
 root.mainloop()
